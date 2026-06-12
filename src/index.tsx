@@ -1,11 +1,9 @@
-/* eslint-disable class-methods-use-this */
-/* eslint-disable react/jsx-no-constructed-context-values */
-/* eslint-disable no-underscore-dangle */
 import { HomeAssistant } from 'custom-card-helpers';
 import { StyleSheetManager } from 'styled-components';
 import { render } from 'preact';
-import store from 'store';
+import { store } from 'store';
 import Card from './card';
+import { Config } from './types';
 
 class BoilerplateCard extends HTMLElement {
   set hass(hass: HomeAssistant | undefined) {
@@ -13,7 +11,7 @@ class BoilerplateCard extends HTMLElement {
     this._render();
   }
 
-  setConfig(config: any) {
+  setConfig(config: Config) {
     store.setState({ config });
     this._render();
   }
@@ -22,10 +20,8 @@ class BoilerplateCard extends HTMLElement {
     render(
       (
         <StyleSheetManager target={this}>
-          { /* @ts-ignore */ }
           <ha-card>
             <Card />
-            { /* @ts-ignore */ }
           </ha-card>
         </StyleSheetManager>
       ), this,
@@ -39,10 +35,23 @@ class BoilerplateCard extends HTMLElement {
 
 customElements.define('boilerplate-card', BoilerplateCard);
 
+declare module 'preact/jsx-runtime' {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace JSX {
+    interface IntrinsicElements {
+      'ha-card': { [key: string]: unknown };
+    }
+  }
+}
+
 declare global {
-  // eslint-disable-next-line no-unused-vars
   interface Window {
-    customCards?: any[];
+    customCards?: {
+      type: string,
+      name: string,
+      preview: boolean,
+      description: string,
+    }[];
   }
 }
 

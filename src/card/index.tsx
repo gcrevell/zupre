@@ -1,6 +1,6 @@
 import { useConfig, useEntity, useUser } from 'hooks';
 import { FunctionComponent } from 'preact';
-import styled from 'styled-components';
+import styles from './card.module.css';
 
 const Card: FunctionComponent = () => {
   const sun = useEntity('sun.sun');
@@ -8,33 +8,22 @@ const Card: FunctionComponent = () => {
   const user = useUser();
 
   return (
-    <Root>
-      <Text>
+    <div class={styles.root}>
+      <p class={styles.text}>
         <b>
           Hi,
           {' '}
           { user?.name }
           !
         </b>
-      </Text>
-      <Text><b>{ sun?.attributes.friendly_name }</b></Text>
-      <Text>{ sun?.state }</Text>
+      </p>
+      <p class={styles.text}><b>{ sun?.attributes.friendly_name }</b></p>
+      <p class={styles.text}>{ sun?.state }</p>
       <pre>
         { JSON.stringify(config || {}, null, 2) }
       </pre>
-    </Root>
+    </div>
   );
 };
 
 export default Card;
-
-const Text = styled.p`
-  & > b {
-    color: var(--primary-color);
-    font-weight: bold;
-  }
-`;
-
-const Root = styled.div`
-  padding: 1rem;
-`;

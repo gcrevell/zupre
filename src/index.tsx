@@ -1,5 +1,4 @@
 import { HomeAssistant } from 'custom-card-helpers';
-import { StyleSheetManager } from 'styled-components';
 import { render } from 'preact';
 import { store } from 'store';
 import Card from './card';
@@ -19,11 +18,9 @@ class BoilerplateCard extends HTMLElement {
   private _render = () => {
     render(
       (
-        <StyleSheetManager target={this}>
-          <ha-card>
-            <Card />
-          </ha-card>
-        </StyleSheetManager>
+        <ha-card>
+          <Card />
+        </ha-card>
       ), this,
     );
   };

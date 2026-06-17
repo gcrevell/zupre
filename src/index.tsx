@@ -1,7 +1,7 @@
 import { HomeAssistant } from 'custom-card-helpers';
 import { render } from 'preact';
 import { store } from 'store';
-import Card from './card';
+import { Card } from './card';
 import { Config } from './types';
 
 class BoilerplateCard extends HTMLElement {

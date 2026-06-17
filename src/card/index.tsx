@@ -2,14 +2,14 @@ import { useConfig, useEntity, useUser } from 'hooks';
 import { FunctionComponent } from 'preact';
 import styles from './card.module.css';
 
-const Card: FunctionComponent = () => {
+export const Card: FunctionComponent = () => {
   const sun = useEntity('sun.sun');
   const config = useConfig();
   const user = useUser();
 
   return (
-    <div class={styles.root}>
-      <p class={styles.text}>
+    <div className={styles.root}>
+      <p className={styles.text}>
         <b>
           Hi,
           {' '}
@@ -17,13 +17,11 @@ const Card: FunctionComponent = () => {
           !
         </b>
       </p>
-      <p class={styles.text}><b>{ sun?.attributes.friendly_name }</b></p>
-      <p class={styles.text}>{ sun?.state }</p>
+      <p className={styles.text}><b>{ sun?.attributes.friendly_name }</b></p>
+      <p className={styles.text}>{ sun?.state }</p>
       <pre>
         { JSON.stringify(config || {}, null, 2) }
       </pre>
     </div>
   );
 };
-
-export default Card;

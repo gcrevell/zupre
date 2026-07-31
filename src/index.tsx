@@ -4,7 +4,7 @@ import { createStore, StoreContext } from 'store';
 import { Card } from './card';
 import { Config } from './types';
 
-class BoilerplateCard extends HTMLElement {
+class RoomCard extends HTMLElement {
   private _store = createStore();
 
   private _mount?: HTMLDivElement;
@@ -62,7 +62,7 @@ class BoilerplateCard extends HTMLElement {
   }
 }
 
-customElements.define('boilerplate-card', BoilerplateCard);
+customElements.define('room-card', RoomCard);
 
 declare module 'preact/jsx-runtime' {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -87,8 +87,8 @@ declare global {
 
 window.customCards = window.customCards || [];
 window.customCards.push({
-  type: 'boilerplate-card',
-  name: 'Boilerplate Card',
+  type: 'room-card',
+  name: 'Room Card',
   preview: false,
-  description: 'Boilerplate Card x React',
+  description: 'Single-room card with brightness and quick actions',
 });

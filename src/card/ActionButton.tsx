@@ -5,16 +5,19 @@ import styles from './card.module.css';
 
 type Props = {
   action: RoomAction;
+  onAction?: () => void;
 };
 
-export const ActionButton: FunctionComponent<Props> = ({ action }) => {
+export const ActionButton: FunctionComponent<Props> = ({ action, onAction }) => {
   const hass = useHass();
-  const enabled = useEntity(action.enabledEntity);
+  const enabled = useEntity(action.enabled_entity);
   const script = useEntity(action.script);
   const isEnabled = enabled?.state === 'on';
 
-  const handleClick = () => {
+  const handleClick = (event: MouseEvent) => {
+    event.stopPropagation();
     hass?.callService('script', 'turn_on', { entity_id: action.script, variables: action.data });
+    onAction?.();
   };
 
   return (

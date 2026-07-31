@@ -46,7 +46,7 @@ export const ActionMenu: FunctionComponent<Props> = ({ actions, onCollapse }) =>
       >
         <div className={styles.menuBackdrop} />
         {actions.map((action) => (
-          <ActionButton key={action.script} action={action} />
+          <ActionButton key={action.script} action={action} onAction={scheduleClose} />
         ))}
       </div>
       <button

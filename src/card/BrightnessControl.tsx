@@ -7,10 +7,10 @@ const FRACTIONS = [1, 2 / 3, 1 / 3];
 
 type Props = {
   entity: string;
-  disabled?: boolean;
+  locked?: boolean;
 };
 
-export const BrightnessControl: FunctionComponent<Props> = ({ entity, disabled }) => {
+export const BrightnessControl: FunctionComponent<Props> = ({ entity, locked }) => {
   const hass = useHass();
   const inputNumber = useEntity(entity);
   const [hovered, setHovered] = useState<number | undefined>(undefined);
@@ -39,15 +39,12 @@ export const BrightnessControl: FunctionComponent<Props> = ({ entity, disabled }
   const previewFloor = hovered !== undefined ? Math.max(activeFloor, hovered) : activeFloor;
 
   const setLevel = (target: number) => {
+    if (locked) return;
     hass?.callService('input_number', 'set_value', { entity_id: entity, value: target });
   };
 
   return (
-    <div
-      className={`${styles.brightness} ${disabled ? styles.brightnessDisabled : ''}`}
-      role="radiogroup"
-      aria-label="Brightness"
-    >
+    <div className={styles.brightness} role="radiogroup" aria-label="Brightness">
       {levels.map(({ value: level, target }) => {
         const isActive = level <= activeFloor;
         const isPreview = !isActive && level <= previewFloor;
@@ -55,14 +52,13 @@ export const BrightnessControl: FunctionComponent<Props> = ({ entity, disabled }
           <label
             key={level}
             className={`${styles.brightnessSeg} ${isActive ? styles.brightnessSegActive : ''} ${isPreview ? styles.brightnessSegHover : ''}`}
-            onMouseEnter={() => !disabled && setHovered(level)}
+            onMouseEnter={() => setHovered(level)}
             onMouseLeave={() => setHovered(undefined)}
           >
             <input
               type="radio"
               name={`lvl-${entity}`}
               checked={selected === level}
-              disabled={disabled}
               onChange={() => setLevel(target)}
             />
             <span />

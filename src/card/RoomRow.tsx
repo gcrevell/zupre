@@ -6,6 +6,7 @@ import { Room } from 'types';
 import { ActionButton } from './ActionButton';
 import { ActionMenu } from './ActionMenu';
 import { BrightnessControl } from './BrightnessControl';
+import { runIconAction } from './iconAction';
 import styles from './card.module.css';
 
 const BRIGHTNESS_LOCK_MS = 400;
@@ -28,13 +29,19 @@ export const RoomRow: FunctionComponent<Props> = ({ room }) => {
 
   return (
     <div className={styles.room}>
-      <div className={styles.roomIcon}>
+      <button
+        type="button"
+        className={styles.roomIcon}
+        disabled={!room.icon_action}
+        aria-label={room.icon_action ? room.name : undefined}
+        onClick={() => room.icon_action && runIconAction(room.icon_action)}
+      >
         <ha-icon icon={room.icon} />
-      </div>
+      </button>
       <div className={styles.roomMain}>
         <div className={styles.roomName}>{room.name}</div>
-        {room.brightnessEntity && (
-          <BrightnessControl entity={room.brightnessEntity} disabled={brightnessLocked} />
+        {room.brightness_entity && (
+          <BrightnessControl entity={room.brightness_entity} locked={brightnessLocked} />
         )}
       </div>
       <div className={styles.actionsRow}>

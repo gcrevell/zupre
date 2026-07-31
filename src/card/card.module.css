@@ -18,6 +18,16 @@
   height: 32px;
   flex: none;
   --mdc-icon-size: 30px;
+  border: none;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.roomIcon:disabled {
+  cursor: default;
 }
 
 .roomMain {
@@ -70,14 +80,6 @@
   align-items: center;
   gap: 5px;
   margin-top: 2px;
-}
-
-.brightnessDisabled {
-  opacity: 0.45;
-}
-
-.brightnessDisabled .brightnessSeg {
-  cursor: not-allowed;
 }
 
 .brightness input {

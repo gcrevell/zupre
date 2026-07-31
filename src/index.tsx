@@ -7,6 +7,10 @@ import { Config } from './types';
 class BoilerplateCard extends HTMLElement {
   private _store = createStore();
 
+  private _mount?: HTMLDivElement;
+
+  private _stylesInjected = false;
+
   set hass(hass: HomeAssistant | undefined) {
     this._store.setState({ hass });
     this._render();
@@ -17,7 +21,31 @@ class BoilerplateCard extends HTMLElement {
     this._render();
   }
 
+  // Home Assistant wraps dashboard cards in several layers of Shadow DOM
+  // (hui-card, hui-view, home-assistant-main, ...), so a <style> tag injected
+  // into document.head by style-loader never reaches this card's light-DOM
+  // content — it lives in an unrelated tree scope. Cloning it into our own
+  // subtree keeps it in the same tree scope as whatever we render, regardless
+  // of where HA ends up placing this element.
+  private _ensureStyles = () => {
+    if (this._stylesInjected) return;
+    const source = document.head.querySelector('style[data-card-style]');
+    if (source) {
+      this.prepend(source.cloneNode(true));
+      this._stylesInjected = true;
+    }
+  };
+
+  private _getMount = () => {
+    if (!this._mount) {
+      this._mount = document.createElement('div');
+      this.appendChild(this._mount);
+    }
+    return this._mount;
+  };
+
   private _render = () => {
+    this._ensureStyles();
     render(
       (
         <StoreContext.Provider value={this._store}>
@@ -25,7 +53,7 @@ class BoilerplateCard extends HTMLElement {
             <Card />
           </ha-card>
         </StoreContext.Provider>
-      ), this,
+      ), this._getMount(),
     );
   };
 
@@ -41,6 +69,7 @@ declare module 'preact/jsx-runtime' {
   namespace JSX {
     interface IntrinsicElements {
       'ha-card': { [key: string]: unknown };
+      'ha-icon': { [key: string]: unknown };
     }
   }
 }

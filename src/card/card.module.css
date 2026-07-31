@@ -2,7 +2,226 @@
   padding: 1rem;
 }
 
-.text > b {
-  color: var(--primary-color);
-  font-weight: bold;
+.room {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 2px;
+  border-radius: var(--ha-card-border-radius, 12px);
+}
+
+.roomIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  --mdc-icon-size: 30px;
+}
+
+.roomMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.roomName {
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--primary-text-color);
+  line-height: 1.25;
+}
+
+.actionsRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+
+.iconBtn {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--divider-color);
+  color: var(--primary-text-color);
+  cursor: pointer;
+  padding: 0;
+  --mdc-icon-size: 15px;
+}
+
+.iconBtn:hover:not(.iconBtnDisabled) {
+  background: color-mix(in srgb, var(--primary-text-color) 8%, transparent);
+}
+
+.iconBtnDisabled {
+  opacity: 0.45;
+}
+
+.brightness {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: center;
+  gap: 5px;
+  margin-top: 2px;
+}
+
+.brightnessDisabled {
+  opacity: 0.45;
+}
+
+.brightnessDisabled .brightnessSeg {
+  cursor: not-allowed;
+}
+
+.brightness input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.brightnessSeg {
+  flex: 1;
+  padding: 4px 0;
+  cursor: pointer;
+}
+
+.brightnessSeg span {
+  display: block;
+  height: 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary-text-color) 14%, transparent);
+}
+
+.brightnessSegHover span {
+  background: color-mix(in srgb, #ae50fe 45%, color-mix(in srgb, var(--primary-text-color) 14%, transparent));
+}
+
+.brightnessSegActive span {
+  background: #ae50fe;
+}
+
+.brightnessSeg:has(input:focus-visible) span {
+  outline: 2px solid #ae50fe;
+  outline-offset: 1px;
+}
+
+.menu {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.menuTrigger {
+  position: relative;
+  z-index: 1;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--divider-color);
+  color: var(--primary-text-color);
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.3s ease, background 0.15s ease;
+}
+
+.menuTrigger:hover {
+  background: color-mix(in srgb, var(--primary-text-color) 8%, transparent);
+}
+
+.menuTriggerOpen {
+  transform: rotate(180deg);
+}
+
+.menuDot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: currentColor;
+  transition: transform 0.25s ease, opacity 0.25s ease, width 0.25s ease;
+}
+
+.menuDot:nth-child(1) {
+  transform: translate(-50%, -50%) translateY(-6px);
+}
+
+.menuDot:nth-child(2) {
+  transform: translate(-50%, -50%);
+}
+
+.menuDot:nth-child(3) {
+  transform: translate(-50%, -50%) translateY(6px);
+}
+
+.menuTriggerOpen .menuDot {
+  width: 14px;
+}
+
+.menuTriggerOpen .menuDot:nth-child(1) {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.menuTriggerOpen .menuDot:nth-child(2) {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0);
+}
+
+.menuTriggerOpen .menuDot:nth-child(3) {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.menuItems {
+  position: absolute;
+  top: 50%;
+  right: 100%;
+  transform: translateY(-50%) translateX(8px);
+  z-index: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease, visibility 0s linear 0.25s;
+}
+
+.menuItemsOpen {
+  transform: translateY(-50%) translateX(0);
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition: opacity 0.25s ease, transform 0.25s ease, visibility 0s linear;
+}
+
+.menuBackdrop {
+  position: absolute;
+  inset: -4px;
+  z-index: 0;
+  border-radius: 999px;
+  background: var(--ha-card-background, var(--card-background-color, #fff));
+  filter: blur(5px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.menuItemsOpen .menuBackdrop {
+  opacity: 1;
 }

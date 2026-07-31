@@ -2,14 +2,30 @@ import { HomeAssistant } from 'custom-card-helpers';
 import { render } from 'preact';
 import { createStore, StoreContext } from 'store';
 import { Card } from './card';
+import { Editor } from './editor';
 import { Config } from './types';
+
+// Home Assistant wraps dashboard cards (and the card editor dialog) in
+// several layers of Shadow DOM (hui-card, hui-view, home-assistant-main,
+// hui-dialog-edit-card, ...), so a <style> tag injected into document.head
+// by style-loader never reaches this element's light-DOM content — it lives
+// in an unrelated tree scope. Cloning it into our own subtree keeps it in
+// the same tree scope as whatever we render, regardless of where HA ends up
+// placing the element.
+const injectCardStyles = (host: HTMLElement) => {
+  if (host.querySelector(':scope > style[data-card-style]')) return;
+  // style-loader emits one <style data-card-style> per CSS module (card +
+  // editor), so clone all of them — grabbing only the first leaves the other
+  // module's styles stranded in document.head, out of this element's scope.
+  document.head.querySelectorAll('style[data-card-style]').forEach((source) => {
+    host.prepend(source.cloneNode(true));
+  });
+};
 
 class RoomCard extends HTMLElement {
   private _store = createStore();
 
   private _mount?: HTMLDivElement;
-
-  private _stylesInjected = false;
 
   set hass(hass: HomeAssistant | undefined) {
     this._store.setState({ hass });
@@ -21,21 +37,6 @@ class RoomCard extends HTMLElement {
     this._render();
   }
 
-  // Home Assistant wraps dashboard cards in several layers of Shadow DOM
-  // (hui-card, hui-view, home-assistant-main, ...), so a <style> tag injected
-  // into document.head by style-loader never reaches this card's light-DOM
-  // content — it lives in an unrelated tree scope. Cloning it into our own
-  // subtree keeps it in the same tree scope as whatever we render, regardless
-  // of where HA ends up placing this element.
-  private _ensureStyles = () => {
-    if (this._stylesInjected) return;
-    const source = document.head.querySelector('style[data-card-style]');
-    if (source) {
-      this.prepend(source.cloneNode(true));
-      this._stylesInjected = true;
-    }
-  };
-
   private _getMount = () => {
     if (!this._mount) {
       this._mount = document.createElement('div');
@@ -45,7 +46,7 @@ class RoomCard extends HTMLElement {
   };
 
   private _render = () => {
-    this._ensureStyles();
+    injectCardStyles(this);
     render(
       (
         <StoreContext.Provider value={this._store}>
@@ -60,9 +61,65 @@ class RoomCard extends HTMLElement {
   getCardSize() {
     return 1;
   }
+
+  static getConfigElement() {
+    return document.createElement('room-card-editor');
+  }
+
+  static getStubConfig(): Omit<Config, 'type'> {
+    return {
+      name: 'Room',
+      icon: 'mdi:sofa',
+    };
+  }
+}
+
+class RoomCardEditor extends HTMLElement {
+  private _mount?: HTMLDivElement;
+
+  private _config?: Config;
+
+  private _hass?: HomeAssistant;
+
+  setConfig(config: Config) {
+    this._config = config;
+    this._render();
+  }
+
+  set hass(hass: HomeAssistant | undefined) {
+    this._hass = hass;
+    this._render();
+  }
+
+  private _getMount = () => {
+    if (!this._mount) {
+      this._mount = document.createElement('div');
+      this.appendChild(this._mount);
+    }
+    return this._mount;
+  };
+
+  private _onChange = (config: Config) => {
+    this._config = config;
+    this.dispatchEvent(new CustomEvent('config-changed', {
+      detail: { config },
+      bubbles: true,
+      composed: true,
+    }));
+  };
+
+  private _render = () => {
+    if (!this._config) return;
+    injectCardStyles(this);
+    render(
+      <Editor config={this._config} hass={this._hass} onChange={this._onChange} />,
+      this._getMount(),
+    );
+  };
 }
 
 customElements.define('room-card', RoomCard);
+customElements.define('room-card-editor', RoomCardEditor);
 
 declare module 'preact/jsx-runtime' {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -70,6 +127,7 @@ declare module 'preact/jsx-runtime' {
     interface IntrinsicElements {
       'ha-card': { [key: string]: unknown };
       'ha-icon': { [key: string]: unknown };
+      'ha-form': { [key: string]: unknown };
     }
   }
 }

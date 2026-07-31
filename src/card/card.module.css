@@ -42,6 +42,24 @@
   line-height: 1.25;
 }
 
+@media (max-width: 600px) {
+  .room {
+    padding: 0 2px 2px;
+  }
+
+  .roomName {
+    font-size: 16px;
+  }
+
+  .brightnessSeg {
+    padding: 4px 0 2px;
+  }
+
+  .brightnessSeg span {
+    height: 12px;
+  }
+}
+
 .actionsRow {
   display: flex;
   align-items: center;

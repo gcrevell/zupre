@@ -1,26 +1,30 @@
 import { HomeAssistant } from 'custom-card-helpers';
 import { render } from 'preact';
-import { store } from 'store';
+import { createStore, StoreContext } from 'store';
 import { Card } from './card';
 import { Config } from './types';
 
 class BoilerplateCard extends HTMLElement {
+  private _store = createStore();
+
   set hass(hass: HomeAssistant | undefined) {
-    store.setState({ hass });
+    this._store.setState({ hass });
     this._render();
   }
 
   setConfig(config: Config) {
-    store.setState({ config });
+    this._store.setState({ config });
     this._render();
   }
 
   private _render = () => {
     render(
       (
-        <ha-card>
-          <Card />
-        </ha-card>
+        <StoreContext.Provider value={this._store}>
+          <ha-card>
+            <Card />
+          </ha-card>
+        </StoreContext.Provider>
       ), this,
     );
   };

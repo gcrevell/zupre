@@ -24,8 +24,7 @@ export const BrightnessControl: FunctionComponent<Props> = ({ entity, locked }) 
     target: min + range * fraction,
   }));
 
-  const currentFraction = range > 0 ? (currentValue - min) / range : 0;
-  const selected = Number.isFinite(currentValue) && currentFraction > 0
+  const selected = Number.isFinite(currentValue)
     ? levels.reduce((closest, level) => (
       Math.abs(level.target - currentValue) < Math.abs(closest.target - currentValue) ? level : closest
     )).value

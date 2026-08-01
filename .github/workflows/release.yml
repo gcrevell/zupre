@@ -1,0 +1,37 @@
+name: Release card builds
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # yarn.lock isn't committed in this repo, so there's nothing to freeze
+      # against here.
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Build room-card
+        run: yarn workspace @zupre/room-card run build
+
+      # Rolling "latest" release: each push to main overwrites its assets,
+      # giving consumers (e.g. the homeassistant config repo) one stable,
+      # permanent download URL per card instead of a version to track.
+      - name: Publish to rolling latest release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Latest card builds
+          body: Automatically rebuilt and overwritten on every push to main — not a pinned version.
+          files: packages/room-card/dist/room-card.js

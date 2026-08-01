@@ -2,7 +2,7 @@ import { HomeAssistant } from 'custom-card-helpers';
 import { FunctionComponent } from 'preact';
 import { useState } from 'preact/hooks';
 import { RoomAction } from 'types';
-import { FormSchema, HaForm } from './HaForm';
+import { FormSchema, HaForm } from '@zupre/core';
 import styles from './editor.module.css';
 
 type Props = {

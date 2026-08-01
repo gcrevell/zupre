@@ -1,0 +1,16 @@
+{
+  "name": "@zupre/core",
+  "version": "1.0.0",
+  "private": true,
+  "license": "MIT",
+  "main": "src/index.ts",
+  "scripts": {
+    "lint": "eslint \"src/**\"",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "custom-card-helpers": "^2.0.0",
+    "preact": "^10.29.2",
+    "zustand": "^5.0.14"
+  }
+}

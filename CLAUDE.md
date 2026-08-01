@@ -2,46 +2,57 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Structure
+
+This is a yarn workspaces monorepo (`workspaces: ["packages/*"]`) holding a shared base plus one or more Home Assistant custom Lovelace cards built on it:
+
+- `packages/core` (`@zupre/core`) — the generic, product-agnostic base: the zustand store + Preact context (`store.ts`), hooks (`hooks/`), the `HaForm` `<ha-form>` wrapper (`editor/HaForm.tsx`), and the minimal `BaseConfig` type (`{ type: string }`, the only field every Lovelace card config is guaranteed to have). Has no build script — it's never bundled on its own, only compiled as source into whichever product package imports it.
+- `packages/room-card` (`@zupre/room-card`) — the first product: a single-room card with brightness control and quick actions. Depends on `@zupre/core` via the workspace (`"@zupre/core": "*"` in its `package.json`, resolved by yarn's workspace symlinking).
+
+This replaced an earlier model where the generic base lived on the `master` branch and each product was a long-lived branch off it (`room-card` being the only one that ever existed). Branches don't support building several products at once and require re-merging every base fix into every product branch forever — packages do, and are the model to extend when adding a second card.
+
+**Adding a new product package**: copy `packages/room-card`'s shape (`package.json`, `tsconfig.json`, `webpack.config.js` calling `../core/webpack.base.js`), give it a fixed output filename, and add its `build`/`watch` scripts to the root `package.json` (`yarn workspace @zupre/<name> run build`) — `yarn workspaces run build` isn't used at the root because `@zupre/core` has no `build` script and yarn classic hard-fails rather than skipping workspaces missing a script.
+
+## Cross-package imports (`@zupre/core`)
+
+`packages/room-card/tsconfig.json` maps the bare specifier `@zupre/core` directly to `../core/src` via `compilerOptions.paths` (resolved at build time by `tsconfig-paths-webpack-plugin`, already a webpack dependency) — **not** through node_modules package resolution, even though yarn also symlinks `@zupre/core` into `node_modules/`. This matters because ts-loader's rule excludes `node_modules/`; if the import resolved through the symlink, ts-loader would silently skip compiling `core`'s TypeScript source. Resolving through the relative `paths` alias instead means webpack sees `core`'s files as ordinary first-party source.
+
+**Each package's TypeScript program is independent** — `room-card`'s `tsconfig.json` only `include`s its own `src/`, not `core`'s. Regular `.ts`/`.tsx` files from `core` still get pulled into `room-card`'s build fine, because they're reached via explicit `import` statements (module resolution doesn't care about `include`). But `core`'s `declarations.d.ts` (ambient JSX intrinsic augmentation for `<ha-form>`, used by `HaForm.tsx`) is never `import`ed by name, so nothing pulls it into `room-card`'s program automatically. Adding `core`'s `src/` (or just that file) to `room-card`'s `include` looks like the fix, but **don't do that** — it was tried and it broke JSX resolution for every standard intrinsic (`div`, `span`, ...) across the whole program in a way that wasn't worth chasing further. Instead, the `ha-form` intrinsic declaration is duplicated: once in `core/src/declarations.d.ts` (so `core` type-checks standalone) and once in `room-card/src/index.tsx` (so `room-card`'s own build sees it). Any new product package that renders `<ha-form>` directly needs the same duplicated three-line declaration.
+
 ## Commands
 
 ```bash
-yarn build       # Production build → dist/bundle.js
-yarn watch       # Build with file watching
-yarn dev         # Dev server with HMR (serves dist/, allows all hosts for HA integration)
-yarn lint        # ESLint across src/
+yarn install     # once, from repo root — sets up workspace symlinks
+yarn build       # builds @zupre/room-card → packages/room-card/dist/room-card.js
+yarn watch       # build with file watching (@zupre/room-card only)
+yarn lint        # ESLint across every package's src/
+yarn test        # runs @zupre/core's vitest suite (the only package with tests today)
 ```
 
-There are no tests in this project.
+Per-package: `cd packages/room-card && yarn dev` starts a webpack dev server (HMR, `allowedHosts: 'all'`) for pointing a real HA instance at `http://<your-machine>:8080/room-card.js` during development.
 
-## Architecture
+## Architecture (per product package, e.g. `room-card`)
 
-This is a Home Assistant custom card boilerplate built on Preact + zustand + CSS Modules.
+**Data flow:** Home Assistant calls `set hass()` and `setConfig()` on the card's web component (`packages/room-card/src/index.tsx`). Both write directly into the zustand store (`@zupre/core`'s `store.ts`), which triggers reactive re-renders of the Preact tree.
 
-**Data flow:** Home Assistant calls `set hass()` and `setConfig()` on the `BoilerplateCard` web component (`src/index.tsx`). Both methods write directly into the zustand store (`src/store.ts`), which triggers reactive re-renders of the Preact tree.
+**Web component → Preact bridge**: `RoomCard extends HTMLElement` wraps the Preact render (into a lazily-created child `<div>`, not `this` directly — DOM mutation isn't allowed inside a custom element's constructor). The card itself renders into light DOM (no shadow root), but HA nests every card several Shadow DOM boundaries deep (`hui-card`, `hui-view`, `home-assistant-main`, ...), so a `<style>` tag injected into `document.head` by style-loader never reaches it — it's a different CSS tree scope. To work around this, style-loader tags its injected `<style>` with `data-card-style` (see `packages/core/webpack.base.js`), and on first render the card clones that tag into its own subtree, so the CSS travels with the card regardless of where HA places it. Verify styling changes against something that actually nests the card in a Shadow DOM ancestor (a plain test page without one will falsely look fine).
 
-**Web component → Preact bridge** (`src/index.tsx`): `BoilerplateCard extends HTMLElement` wraps the Preact render (into a lazily-created child `<div>`, not `this` directly — DOM mutation isn't allowed inside a custom element's constructor). The card itself renders into light DOM (no shadow root), but HA nests every card several Shadow DOM boundaries deep (`hui-card`, `hui-view`, `home-assistant-main`, ...), so a `<style>` tag injected into `document.head` by style-loader never reaches it — it's a different CSS tree scope. To work around this, style-loader tags its injected `<style>` with `data-card-style` (see `webpack.config.js`), and on first render `BoilerplateCard` clones that tag into its own subtree, so the CSS travels with the card regardless of where HA places it. Verify styling changes against something that actually nests the card in a Shadow DOM ancestor (a plain test page without one will falsely look fine).
+**Hooks** (`@zupre/core`'s `hooks/`, generic): `useEntity` / `useEntities` (reactive selectors over `hass.states`), `useHass` (raw `HomeAssistant` instance), `useConfig` (returns `BaseConfig | undefined`), `useUser`, `useHistory`. Each product package wraps `useConfig` locally to cast to its own richer config type (see `packages/room-card/src/hooks/useConfig.ts`) rather than threading a generic type parameter through the store/context — simpler for a per-product config shape than a fully generic store.
 
-**Hooks** (`src/hooks/`): All hooks read from the zustand store. They are the primary interface for card components:
-- `useEntity` / `useEntities` — reactive selectors over `hass.states`
-- `useHass` — raw `HomeAssistant` instance for service/API calls
-- `useConfig` — typed card config (extend `Config` in `src/types.ts` for your card)
-- `useUser` — current HA user plus their entity from `person.*`
-- `useHistory` — fetches entity history via `hass.callApi` and appends live state changes
+**Path aliases** (each package's `tsconfig.json`, `baseUrl: "."` + `"*": ["./src/*"]`): within a package, imports like `import { useConfig } from 'hooks'` resolve to that package's own `src/hooks`. webpack mirrors this via `tsconfig-paths-webpack-plugin`. See the cross-package section above for how `@zupre/core` itself resolves — differently, and deliberately not through this wildcard.
 
-**Path aliases** (tsconfig `baseUrl: "."` + `"*": ["./src/*"]`): Imports like `import store from 'store'` resolve to `src/store.ts`. webpack mirrors this via `tsconfig-paths-webpack-plugin`.
+**CSS Modules** (`packages/core/webpack.base.js`): `.module.css` files are processed by css-loader (with `esModule: false` to fix webpack harmony import interop) and injected at runtime by style-loader. Class names are generated as `[local]--[hash:base64:5]`. The TypeScript declaration for `*.module.css` imports lives in each product package's own `src/declarations.d.ts`.
 
-**CSS Modules** (`webpack.config.js`): `.module.css` files are processed by css-loader (with `esModule: false` to fix webpack harmony import interop) and injected at runtime by style-loader. Class names are generated as `[local]--[hash:base64:5]`. The TypeScript declaration for `*.module.css` imports lives in `src/declarations.d.ts`.
+**Preact/React aliasing** (`packages/core/webpack.base.js`): `react` and `react-dom` are aliased to `preact/compat`, so React-ecosystem libraries work without modification. `packages/core/vitest.config.mts` mirrors this for tests — it's not optional there either, since zustand has an optional `react` import that vitest will otherwise fail to resolve.
 
-**Preact/React aliasing** (webpack config): `react` and `react-dom` are aliased to `preact/compat`, so React-ecosystem libraries work without modification.
+**ESLint** (root `eslint.config.mjs`, shared across all packages): ESLint 9 flat config using `typescript-eslint` (unified package) + `eslint-plugin-react` + `eslint-plugin-react-hooks`, scoped to `packages/*/src/**/*.{ts,tsx}`. No airbnb config — it doesn't support the flat config format. Each package's `lint` script (`eslint "src/**"`) runs from that package's own directory; ESLint's flat-config lookup walks up to find this shared root config automatically.
 
-**ESLint** (`eslint.config.mjs`): ESLint 9 flat config using `typescript-eslint` (unified package) + `eslint-plugin-react` + `eslint-plugin-react-hooks`. No airbnb config — it doesn't support the flat config format.
+## Customization entry points (per product package)
 
-## Customization entry points
+- `src/types.ts` — extend `Config` (`Room & BaseConfig` for `room-card`) with your card's YAML config fields
+- `src/card/index.tsx` + `src/card/card.module.css` — the root card component and its styles
+- `src/index.tsx` — `customElements.define('room-card', ...)` and the `window.customCards` entry name the card
 
-- `src/types.ts` — extend `Config` with your card's YAML config fields
-- `src/card/index.tsx` + `src/card/card.module.css` — the root card component and its styles; replace the demo content here
-- `src/index.tsx` — change `customElements.define('boilerplate-card', ...)` and the `window.customCards` entry to rename the card
+## CI / Deployment
 
-## Deployment
-
-Build produces `dist/bundle.js`. In Home Assistant, add it as a Lovelace resource and reference the card type in dashboard YAML. During development, `yarn dev` starts a webpack dev server that can be added as a resource URL pointing at `http://<your-machine>:8080/bundle.js`.
+`.github/workflows/release.yml` builds every product package on push to `main` and publishes each one's `dist/<name>.js` as an asset on a rolling `latest` GitHub Release (repo is public, so no auth is needed to fetch it). The homeassistant config repo consumes this by `curl`ing `https://github.com/gcrevell/zupre/releases/download/latest/room-card.js` directly into its `www/` — see that repo's `scripts/update-room-card.sh` and its `CLAUDE.md`. There's no local copy/deploy step from this repo anymore; pushing to `main` is the deploy.

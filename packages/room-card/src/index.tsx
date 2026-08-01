@@ -1,6 +1,6 @@
 import { HomeAssistant } from 'custom-card-helpers';
 import { render } from 'preact';
-import { createStore, StoreContext } from 'store';
+import { createStore, StoreContext } from '@zupre/core';
 import { Card } from './card';
 import { Editor } from './editor';
 import { Config } from './types';
@@ -127,6 +127,10 @@ declare module 'preact/jsx-runtime' {
     interface IntrinsicElements {
       'ha-card': { [key: string]: unknown };
       'ha-icon': { [key: string]: unknown };
+      // Duplicated from @zupre/core's declarations.d.ts: each package's
+      // TypeScript program is compiled independently (see webpack.base.js
+      // build notes), so an ambient module augmentation declared only in
+      // core isn't visible here even though HaForm itself is imported fine.
       'ha-form': { [key: string]: unknown };
     }
   }

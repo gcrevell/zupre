@@ -1,0 +1,17 @@
+{
+  "name": "@zupre/room-card",
+  "version": "1.0.0",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "build": "webpack",
+    "watch": "webpack --watch",
+    "dev": "webpack serve --open --mode development",
+    "lint": "eslint \"src/**\""
+  },
+  "dependencies": {
+    "@zupre/core": "*",
+    "custom-card-helpers": "^2.0.0",
+    "preact": "^10.29.2"
+  }
+}

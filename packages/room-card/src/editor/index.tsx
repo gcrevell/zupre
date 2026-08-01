@@ -2,8 +2,8 @@ import { HomeAssistant } from 'custom-card-helpers';
 import { FunctionComponent } from 'preact';
 import { useMemo, useState } from 'preact/hooks';
 import { Config } from 'types';
+import { FormSchema, HaForm } from '@zupre/core';
 import { ActionsField } from './ActionsField';
-import { FormSchema, HaForm } from './HaForm';
 import { Tabs } from './Tabs';
 import styles from './editor.module.css';
 

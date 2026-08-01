@@ -1,20 +1,17 @@
 {
-  "name": "room-card",
+  "name": "zupre",
   "version": "1.0.0",
   "private": true,
   "license": "MIT",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
-    "build": "webpack",
-    "watch": "webpack --watch",
-    "dev": "webpack serve --open --mode development",
-    "lint": "eslint \"src/**\"",
-    "test": "vitest run",
+    "build": "yarn workspace @zupre/room-card run build",
+    "watch": "yarn workspace @zupre/room-card run watch",
+    "lint": "yarn workspaces run lint",
+    "test": "yarn workspace @zupre/core run test",
     "prepare": "husky"
-  },
-  "dependencies": {
-    "custom-card-helpers": "^2.0.0",
-    "preact": "^10.29.2",
-    "zustand": "^5.0.14"
   },
   "devDependencies": {
     "css-loader": "^7.1.4",

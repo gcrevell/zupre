@@ -1,3 +1,5 @@
+import { BaseConfig } from '@zupre/core';
+
 export type RoomAction = {
   icon: string;
   enabled_entity: string;
@@ -20,6 +22,4 @@ export type Room = {
   icon_action?: IconAction;
 };
 
-export type Config = Room & {
-  type: string;
-};
+export type Config = Room & BaseConfig;

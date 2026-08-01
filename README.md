@@ -1,7 +1,11 @@
 
-# Room Card
+# zupre
 
-A **~55kb** single-room card for Home Assistant.
+A yarn workspaces monorepo for Home Assistant custom Lovelace cards. `packages/core` is the shared, product-agnostic base (store, hooks, `HaForm`); each product is its own package under `packages/*` depending on it. See `CLAUDE.md` for the full architecture, and the [Releases](https://github.com/gcrevell/zupre/releases) page for built bundles (CI publishes every product's build to a rolling `latest` release on push to `main`).
+
+## Room Card (`packages/room-card`)
+
+A **~48kb** single-room card for Home Assistant.
 
 #### Stack:
 - [TypeScript](https://github.com/microsoft/TypeScript)

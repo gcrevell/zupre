@@ -61,27 +61,39 @@ export const resolvePercent = (hass: HomeAssistant | undefined, config: Config):
   return Number.isFinite(percent) ? percent : 0;
 };
 
+// `unknown`/`unavailable`/etc. are non-empty strings that fail Date.parse,
+// so a plain truthy check on the raw state isn't enough to avoid NaN leaking
+// into formatDuration/formatTimeOfDay (a stopped printer's `_print_start`/
+// `_print_finish` reports exactly this while there's no active job).
+const parseTimestamp = (state?: string): number | undefined => {
+  if (!state) return undefined;
+  const parsed = Date.parse(state);
+  return Number.isFinite(parsed) ? parsed : undefined;
+};
+
 // PrusaLink reports absolute ISO timestamps (`_print_start`/`_print_finish`)
 // that we diff against now, rather than a live seconds count.
 const resolveElapsedSeconds = (hass: HomeAssistant | undefined, config: Config): number | undefined => {
   const override = resolveOverride(hass, config, MonitoredCondition.Elapsed);
   if (override.value !== undefined) {
-    return (Date.now() - Date.parse(String(override.value))) / 1000;
+    const parsed = parseTimestamp(String(override.value));
+    return parsed !== undefined ? (Date.now() - parsed) / 1000 : undefined;
   }
 
-  const start = getEntity(hass, `${config.base_entity}_print_start`)?.state;
-  return start ? (Date.now() - Date.parse(start)) / 1000 : undefined;
+  const start = parseTimestamp(getEntity(hass, `${config.base_entity}_print_start`)?.state);
+  return start !== undefined ? (Date.now() - start) / 1000 : undefined;
 };
 
 const resolveRemainingSeconds = (hass: HomeAssistant | undefined, config: Config): number | undefined => {
   const overrideValue = resolveOverride(hass, config, MonitoredCondition.Remaining).value
     ?? resolveOverride(hass, config, MonitoredCondition.ETA).value;
   if (overrideValue !== undefined) {
-    return (Date.parse(String(overrideValue)) - Date.now()) / 1000;
+    const parsed = parseTimestamp(String(overrideValue));
+    return parsed !== undefined ? (parsed - Date.now()) / 1000 : undefined;
   }
 
-  const finish = getEntity(hass, `${config.base_entity}_print_finish`)?.state;
-  return finish ? (Date.parse(finish) - Date.now()) / 1000 : undefined;
+  const finish = parseTimestamp(getEntity(hass, `${config.base_entity}_print_finish`)?.state);
+  return finish !== undefined ? (finish - Date.now()) / 1000 : undefined;
 };
 
 // Not exposed as separate `base_entity`-prefixed entities on PrusaLink —

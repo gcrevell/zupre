@@ -238,6 +238,40 @@
   }
 }
 
+.frame {
+  transition: opacity 0.4s ease;
+}
+
+.frameIdle {
+  opacity: 0.45;
+}
+
+.idleOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.idleIcon {
+  --mdc-icon-size: 34px;
+  color: var(--secondary-text-color);
+  animation: printer-card-breathe 3s ease-in-out infinite;
+}
+
+@keyframes printer-card-breathe {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  50% {
+    transform: scale(1.12);
+    opacity: 0.9;
+  }
+}
+
 .stats {
   flex: 1;
   min-width: 0;
@@ -304,6 +338,10 @@
 
   .printer {
     width: 80px;
+  }
+
+  .idleIcon {
+    --mdc-icon-size: 26px;
   }
 
   .percent {

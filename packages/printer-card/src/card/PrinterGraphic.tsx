@@ -17,7 +17,7 @@ export const PrinterGraphic: FunctionComponent<Props> = ({ progress, printing, s
 
   return (
     <div className={styles.printer} style={{ transform: `scale(${scale ?? 1})` }}>
-      <div className={styles.frame}>
+      <div className={printing ? styles.frame : `${styles.frame} ${styles.frameIdle}`}>
         <div className={styles.postLeft} />
         <div className={styles.postRight} />
         <div className={styles.topBar} />
@@ -28,6 +28,11 @@ export const PrinterGraphic: FunctionComponent<Props> = ({ progress, printing, s
           <div className={styles.gantry} style={{ bottom: `${clamped}%` }}>
             <div className={printing ? `${styles.nozzle} ${styles.nozzleSweeping}` : styles.nozzle} />
           </div>
+          {!printing && (
+            <div className={styles.idleOverlay}>
+              <ha-icon className={styles.idleIcon} icon="mdi:sleep" />
+            </div>
+          )}
         </div>
       </div>
     </div>

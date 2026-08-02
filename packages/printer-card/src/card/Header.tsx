@@ -1,6 +1,7 @@
 import { FunctionComponent } from 'preact';
 import { useEntity, useHass } from 'hooks';
 import { Config } from '../types';
+import { isActiveJobStatus } from './sensors';
 import styles from './card.module.css';
 
 type Props = {
@@ -10,11 +11,20 @@ type Props = {
   onToggleExpanded: () => void;
 };
 
+// PrusaLink's full canonical status vocabulary — every value the base
+// entity is documented to report, so nothing falls through to the generic
+// fallback color unless it's a genuinely unrecognized/future status.
 const STATUS_COLORS: Record<string, string> = {
-  printing: '#4caf50',
-  unknown: '#f44336',
-  operational: '#00bcd4',
   idle: '#00bcd4',
+  ready: '#00bcd4',
+  busy: '#ffc107',
+  printing: '#4caf50',
+  paused: '#ffc107',
+  attention: '#ff7043',
+  finished: '#26a69a',
+  stopped: '#9e9e9e',
+  error: '#f44336',
+  unknown: '#f44336',
 };
 
 export const Header: FunctionComponent<Props> = ({
@@ -32,10 +42,12 @@ export const Header: FunctionComponent<Props> = ({
   };
 
   const statusColor = STATUS_COLORS[status.toLowerCase()] ?? '#ffc107';
-  // Hidden rather than disabled while printing: a smart plug cut mid-print
-  // loses the job (and can damage the printer), so there's no safe "allow
-  // but discourage" state for this button — only remove the temptation.
-  const showPower = config.power_entity && status.toLowerCase() !== 'printing';
+  // Hidden rather than disabled during any in-progress job (Printing,
+  // Paused, Attention, Busy — not just literal "Printing"): a smart plug cut
+  // loses the job (and can damage the printer) whether or not it's actively
+  // moving right now, so there's no safe "allow but discourage" state for
+  // this button — only remove the temptation.
+  const showPower = config.power_entity && !isActiveJobStatus(status);
 
   return (
     <div className={styles.header}>

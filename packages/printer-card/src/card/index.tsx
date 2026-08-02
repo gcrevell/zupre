@@ -1,7 +1,9 @@
 import { FunctionComponent } from 'preact';
 import { useMemo, useState } from 'preact/hooks';
 import { useConfig, useHass } from 'hooks';
-import { resolvePercent, resolveStats, resolveStatus } from './sensors';
+import {
+  isActiveJobStatus, resolvePercent, resolveStats, resolveStatus,
+} from './sensors';
 import { Header } from './Header';
 import { PrinterGraphic } from './PrinterGraphic';
 import { Stats } from './Stats';
@@ -18,7 +20,11 @@ export const Card: FunctionComponent = () => {
   const [showCamera, setShowCamera] = useState(false);
 
   const status = config ? resolveStatus(hass, config) : 'unknown';
+  // `printing` gates the graphic's nozzle-sweep animation specifically —
+  // it shouldn't sweep while Paused/Attention/Busy even though those still
+  // count as an active job for expand/idle-icon purposes.
   const printing = status.toLowerCase() === 'printing';
+  const active = isActiveJobStatus(status);
   const percent = config ? resolvePercent(hass, config) : 0;
   const stats = useMemo(
     () => (config ? resolveStats(hass, config) : []),
@@ -27,7 +33,7 @@ export const Card: FunctionComponent = () => {
 
   if (!config) return null;
 
-  const expanded = expandedOverride ?? (config.always_show || printing);
+  const expanded = expandedOverride ?? (config.always_show || active);
   const rootClass = config.theme === 'Neumorphic' ? `${styles.root} ${styles.neumorphic}` : styles.root;
 
   return (
@@ -47,7 +53,7 @@ export const Card: FunctionComponent = () => {
               onClick={() => config.camera_entity && setShowCamera(true)}
               aria-label={config.camera_entity ? 'Show camera' : 'Printer status'}
             >
-              <PrinterGraphic progress={percent} printing={printing} scale={config.scale} />
+              <PrinterGraphic progress={percent} printing={printing} active={active} scale={config.scale} />
             </button>
             <Stats stats={stats} percent={percent} showPercent={!config.vertical} />
           </div>

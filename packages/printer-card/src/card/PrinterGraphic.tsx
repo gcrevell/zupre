@@ -3,7 +3,12 @@ import styles from './card.module.css';
 
 type Props = {
   progress: number;
+  // Gates the nozzle-sweep animation specifically — only true motion should
+  // sweep, not Paused/Attention/Busy.
   printing: boolean;
+  // Gates the dimmed frame + sleeping icon — any in-progress job (including
+  // Paused/Attention/Busy) counts as "not idle" even when not actively moving.
+  active: boolean;
   scale?: number;
 };
 
@@ -12,12 +17,14 @@ type Props = {
 // as `progress` grows (mirroring the print head moving up the Z axis) and
 // the build fill grows to match, with a CSS keyframe sweep standing in for
 // the nozzle moving along X while printing.
-export const PrinterGraphic: FunctionComponent<Props> = ({ progress, printing, scale }) => {
+export const PrinterGraphic: FunctionComponent<Props> = ({
+  progress, printing, active, scale,
+}) => {
   const clamped = Math.max(0, Math.min(100, progress));
 
   return (
     <div className={styles.printer} style={{ transform: `scale(${scale ?? 1})` }}>
-      <div className={printing ? styles.frame : `${styles.frame} ${styles.frameIdle}`}>
+      <div className={active ? styles.frame : `${styles.frame} ${styles.frameIdle}`}>
         <div className={styles.postLeft} />
         <div className={styles.postRight} />
         <div className={styles.topBar} />
@@ -28,7 +35,7 @@ export const PrinterGraphic: FunctionComponent<Props> = ({ progress, printing, s
           <div className={styles.gantry} style={{ bottom: `${clamped}%` }}>
             <div className={printing ? `${styles.nozzle} ${styles.nozzleSweeping}` : styles.nozzle} />
           </div>
-          {!printing && (
+          {!active && (
             <div className={styles.idleOverlay}>
               <ha-icon className={styles.idleIcon} icon="mdi:sleep" />
             </div>

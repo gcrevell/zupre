@@ -28,17 +28,17 @@ const renderHeader = (config: Config, status: string) => {
 };
 
 describe('Header power button', () => {
-  it('shows the power button when configured and the printer is idle', () => {
-    const container = renderHeader(baseConfig, 'Idle');
+  it.each(['Idle', 'Ready', 'Finished', 'Stopped', 'Error'])('shows the power button when %s', (status) => {
+    const container = renderHeader(baseConfig, status);
     expect(container.querySelector('[aria-label="Toggle power"]')).not.toBeNull();
   });
 
-  it('hides the power button while the printer is printing', () => {
-    const container = renderHeader(baseConfig, 'Printing');
+  it.each(['Printing', 'Paused', 'Attention', 'Busy'])('hides the power button when %s (any in-progress job)', (status) => {
+    const container = renderHeader(baseConfig, status);
     expect(container.querySelector('[aria-label="Toggle power"]')).toBeNull();
   });
 
-  it('is case-insensitive about the printing status', () => {
+  it('is case-insensitive about status', () => {
     const container = renderHeader(baseConfig, 'printing');
     expect(container.querySelector('[aria-label="Toggle power"]')).toBeNull();
   });

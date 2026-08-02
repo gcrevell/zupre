@@ -32,10 +32,14 @@ export const Header: FunctionComponent<Props> = ({
   };
 
   const statusColor = STATUS_COLORS[status.toLowerCase()] ?? '#ffc107';
+  // Hidden rather than disabled while printing: a smart plug cut mid-print
+  // loses the job (and can damage the printer), so there's no safe "allow
+  // but discourage" state for this button — only remove the temptation.
+  const showPower = config.power_entity && status.toLowerCase() !== 'printing';
 
   return (
     <div className={styles.header}>
-      {config.power_entity ? (
+      {showPower ? (
         <button
           type="button"
           className={styles.iconBtn}

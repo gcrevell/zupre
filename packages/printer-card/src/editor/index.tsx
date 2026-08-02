@@ -16,7 +16,6 @@ type Props = {
 const LABELS: Record<string, string> = {
   name: 'Name',
   base_entity: 'Base entity prefix',
-  printer_type: 'Printer type',
   theme: 'Theme',
   always_show: 'Always show (disable auto-collapse)',
   vertical: 'Vertical layout',
@@ -35,19 +34,11 @@ const computeLabel = (schema: FormSchema) => LABELS[schema.name as string] ?? (s
 
 const GENERAL_SCHEMA: FormSchema[] = [{ name: 'name', selector: { text: {} } }];
 const BASE_ENTITY_SCHEMA: FormSchema[] = [{ name: 'base_entity', selector: { text: {} } }];
-const TYPE_THEME_SCHEMA: FormSchema[] = [
-  {
-    name: 'printer_type',
-    selector: {
-      select: {
-        mode: 'dropdown',
-        options: [
-          { value: 'I3', label: 'I3 (Cartesian)' },
-          { value: 'Cantilever', label: 'Cantilever' },
-        ],
-      },
-    },
-  },
+// No printer_type field here: the graphic only ever renders the I3 style
+// today (see PrinterGraphic), so exposing a Cantilever option in the editor
+// would silently do nothing if picked. printer_type is still a valid YAML
+// field for forward-compat, just not offered in the visual editor.
+const THEME_SCHEMA: FormSchema[] = [
   {
     name: 'theme',
     selector: {
@@ -102,10 +93,7 @@ export const Editor: FunctionComponent<Props> = ({ config, hass, onChange }) => 
     () => ({ base_entity: config.base_entity ?? '' }),
     [config.base_entity],
   );
-  const typeThemeData = useMemo(() => ({
-    printer_type: config.printer_type ?? 'I3',
-    theme: config.theme ?? 'Default',
-  }), [config.printer_type, config.theme]);
+  const themeData = useMemo(() => ({ theme: config.theme ?? 'Default' }), [config.theme]);
   const displayData = useMemo(() => ({
     always_show: config.always_show ?? false,
     vertical: config.vertical ?? false,
@@ -149,13 +137,10 @@ export const Editor: FunctionComponent<Props> = ({ config, hass, onChange }) => 
             />
             <HaForm
               hass={hass}
-              data={typeThemeData}
-              schema={TYPE_THEME_SCHEMA}
+              data={themeData}
+              schema={THEME_SCHEMA}
               computeLabel={computeLabel}
-              onChange={(value) => merge({
-                printer_type: value.printer_type as Config['printer_type'],
-                theme: value.theme as Config['theme'],
-              })}
+              onChange={(value) => merge({ theme: value.theme as Config['theme'] })}
             />
           </div>
           <div className={styles.group}>

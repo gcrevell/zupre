@@ -3,8 +3,6 @@ import { useState } from 'preact/hooks';
 import { useEntity, useHass } from 'hooks';
 import styles from './card.module.css';
 
-const FRACTIONS = [1, 2 / 3, 1 / 3];
-
 type Props = {
   entity: string;
   locked?: boolean;
@@ -14,15 +12,16 @@ export const BrightnessControl: FunctionComponent<Props> = ({ entity, locked }) 
   const hass = useHass();
   const inputNumber = useEntity(entity);
   const [hovered, setHovered] = useState<number | undefined>(undefined);
-  const min = Number(inputNumber?.attributes.min ?? 0);
-  const max = Number(inputNumber?.attributes.max ?? 100);
-  const range = max - min;
+  const min = Number(inputNumber?.attributes.min ?? 1);
+  const max = Number(inputNumber?.attributes.max ?? 3);
+  const step = Number(inputNumber?.attributes.step ?? 1) || 1;
   const currentValue = Number(inputNumber?.state);
 
-  const levels = FRACTIONS.map((fraction, index) => ({
-    value: 3 - index,
-    target: min + range * fraction,
-  }));
+  const segments = Math.max(1, Math.round((max - min) / step) + 1);
+  const levels = Array.from({ length: segments }, (_, index) => {
+    const level = segments - index;
+    return { value: level, target: min + (level - 1) * step };
+  });
 
   const selected = Number.isFinite(currentValue)
     ? levels.reduce((closest, level) => (

@@ -118,6 +118,24 @@ const resolveTemperatureStat = (
   };
 };
 
+// Plain `${base_entity}${suffix}` string stats (no time/temperature math),
+// still allowing a `sensors:` override to take precedence.
+const resolveSimpleStat = (
+  hass: HomeAssistant | undefined,
+  config: Config,
+  condition: MonitoredCondition,
+  suffix: string,
+  name: string,
+): Stat => {
+  const override = resolveOverride(hass, config, condition);
+  const value = override.value ?? getEntity(hass, `${config.base_entity}${suffix}`)?.state;
+  return {
+    key: condition,
+    name: override.name ?? name,
+    value: value !== undefined ? String(value) : '—',
+  };
+};
+
 const resolveStat = (
   hass: HomeAssistant | undefined,
   config: Config,
@@ -159,6 +177,17 @@ const resolveStat = (
     case MonitoredCondition.Hotend:
     case MonitoredCondition.Bed:
       return resolveTemperatureStat(hass, config, condition);
+
+    case MonitoredCondition.FileName:
+      return resolveSimpleStat(hass, config, condition, '_filename', 'File');
+
+    case MonitoredCondition.Material:
+      return resolveSimpleStat(hass, config, condition, '_material', 'Material');
+
+    case MonitoredCondition.PrintSpeed: {
+      const stat = resolveSimpleStat(hass, config, condition, '_print_speed', 'Speed');
+      return stat.value === '—' ? stat : { ...stat, value: `${stat.value}%` };
+    }
 
     default: {
       const override = resolveOverride(hass, config, condition);

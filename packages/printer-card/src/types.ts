@@ -17,6 +17,9 @@ export enum MonitoredCondition {
   Remaining = 'Remaining',
   Hotend = 'Hotend',
   Bed = 'Bed',
+  FileName = 'FileName',
+  Material = 'Material',
+  PrintSpeed = 'PrintSpeed',
 }
 
 export enum TemperatureUnit {

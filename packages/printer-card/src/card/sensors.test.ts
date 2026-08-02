@@ -163,15 +163,68 @@ describe('resolveStats temperature fields', () => {
 
 describe('resolveStats custom conditions', () => {
   it('falls through to a sensors override for unrecognized monitored keys', () => {
-    const hass = fakeHass({ 'sensor.filename': { state: 'benchy.gcode' } });
+    const hass = fakeHass({ 'sensor.layer': { state: '42' } });
     const config: Config = {
       ...baseConfig,
-      monitored: ['FileName'],
-      sensors: { FileName: { entity: 'sensor.filename', name: 'File' } },
+      monitored: ['CurrentLayer'],
+      sensors: { CurrentLayer: { entity: 'sensor.layer', name: 'Layer' } },
     };
 
     expect(resolveStats(hass, config)).toEqual([
+      { key: 'CurrentLayer', name: 'Layer', value: '42' },
+    ]);
+  });
+
+  it('shows a dash for an unrecognized key with no override', () => {
+    const config: Config = { ...baseConfig, monitored: ['CurrentLayer'] };
+    expect(resolveStats(fakeHass({}), config)).toEqual([
+      { key: 'CurrentLayer', name: 'CurrentLayer', value: '—' },
+    ]);
+  });
+});
+
+describe('resolveStats FileName/Material/PrintSpeed', () => {
+  it('reads FileName from `${base_entity}_filename`', () => {
+    const hass = fakeHass({ 'sensor.printer_filename': { state: 'benchy.gcode' } });
+    const config: Config = { ...baseConfig, monitored: [MonitoredCondition.FileName] };
+    expect(resolveStats(hass, config)).toEqual([
       { key: 'FileName', name: 'File', value: 'benchy.gcode' },
+    ]);
+  });
+
+  it('reads Material from `${base_entity}_material`', () => {
+    const hass = fakeHass({ 'sensor.printer_material': { state: 'PLA' } });
+    const config: Config = { ...baseConfig, monitored: [MonitoredCondition.Material] };
+    expect(resolveStats(hass, config)).toEqual([
+      { key: 'Material', name: 'Material', value: 'PLA' },
+    ]);
+  });
+
+  it('reads PrintSpeed from `${base_entity}_print_speed` and appends a percent sign', () => {
+    const hass = fakeHass({ 'sensor.printer_print_speed': { state: '100' } });
+    const config: Config = { ...baseConfig, monitored: [MonitoredCondition.PrintSpeed] };
+    expect(resolveStats(hass, config)).toEqual([
+      { key: 'PrintSpeed', name: 'Speed', value: '100%' },
+    ]);
+  });
+
+  it('shows a dash for these fields when the entity is missing, without appending a stray %', () => {
+    const config: Config = {
+      ...baseConfig,
+      monitored: [MonitoredCondition.FileName, MonitoredCondition.Material, MonitoredCondition.PrintSpeed],
+    };
+    expect(resolveStats(fakeHass({}), config).map((stat) => stat.value)).toEqual(['—', '—', '—']);
+  });
+
+  it('prefers a sensors override for any of the three', () => {
+    const hass = fakeHass({ 'sensor.custom_material': { state: 'PETG' } });
+    const config: Config = {
+      ...baseConfig,
+      monitored: [MonitoredCondition.Material],
+      sensors: { Material: { entity: 'sensor.custom_material' } },
+    };
+    expect(resolveStats(hass, config)).toEqual([
+      { key: 'Material', name: 'Material', value: 'PETG' },
     ]);
   });
 });

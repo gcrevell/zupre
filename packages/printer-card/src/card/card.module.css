@@ -137,15 +137,19 @@
   background: color-mix(in srgb, var(--primary-text-color) 8%, transparent);
 }
 
+/* flex: none rather than the stats column's flex: 1 — the printer graphic
+   has a fixed intrinsic width (see .printer), so giving it an equal 1fr
+   share left it swimming in padding while the stats column (real text) was
+   comparatively squeezed. Sized to content instead, with the stats column
+   absorbing whatever space is left. */
 .graphicButton {
-  flex: 1;
-  min-width: 0;
+  flex: none;
   display: flex;
   align-items: center;
   justify-content: center;
   border: none;
   background: transparent;
-  padding: 8px 4px;
+  padding: 4px 0;
   cursor: pointer;
 }
 

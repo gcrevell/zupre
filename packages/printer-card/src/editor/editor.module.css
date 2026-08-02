@@ -1,0 +1,98 @@
+.root {
+  display: flex;
+  flex-direction: column;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  padding: 4px;
+  border-radius: 12px;
+  background: var(--secondary-background-color, rgba(127, 127, 127, 0.12));
+}
+
+.tab {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--secondary-text-color);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.tab:hover {
+  color: var(--primary-text-color);
+}
+
+.tabActive {
+  background: var(--card-background-color, var(--ha-card-background, #1c1c1c));
+  color: var(--primary-color);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.tabPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--divider-color);
+  border-radius: 12px;
+}
+
+.groupTitle {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--secondary-text-color);
+}
+
+.intro {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.introTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--primary-text-color);
+}
+
+.introSubtitle {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--secondary-text-color);
+}
+
+.checklist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 20px;
+}
+
+.checklistItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--primary-text-color);
+  cursor: pointer;
+}

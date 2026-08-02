@@ -2,6 +2,7 @@ import { HomeAssistant } from 'custom-card-helpers';
 import { render } from 'preact';
 import { createStore, StoreContext } from '@zupre/core';
 import { Card } from './card';
+import { isActiveJobStatus, resolveStatus } from './card/sensors';
 import { Editor } from './editor';
 import { Config } from './types';
 
@@ -53,8 +54,17 @@ class PrinterCard extends HTMLElement {
     );
   };
 
+  // A static estimate would be wrong most of the time: the card auto-
+  // collapses to just the header when idle and expands to header + graphic/
+  // stats + action buttons for any in-progress job (see card/index.tsx's
+  // `expanded` logic, mirrored here). Reading current store state at call
+  // time means HA gets an accurate size whenever it actually asks, even
+  // though it doesn't re-poll continuously as status changes on its own.
   getCardSize() {
-    return 3;
+    const { config, hass } = this._store.getState() as { config?: Config; hass?: HomeAssistant };
+    if (!config) return 1;
+    const expanded = config.always_show || isActiveJobStatus(resolveStatus(hass, config));
+    return expanded ? 4 : 1;
   }
 
   static getConfigElement() {

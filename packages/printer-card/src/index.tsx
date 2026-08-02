@@ -4,7 +4,6 @@ import { createStore, StoreContext } from '@zupre/core';
 import { Card } from './card';
 import { Editor } from './editor';
 import { Config } from './types';
-import { log } from './debug';
 
 // See @zupre/room-card's src/index.tsx for the rationale: HA nests cards
 // several Shadow DOM boundaries deep, so a <style> injected into
@@ -29,7 +28,6 @@ class PrinterCard extends HTMLElement {
   }
 
   setConfig(config: Config) {
-    log('PrinterCard.setConfig', config);
     this._store.setState({ config });
     this._render();
   }
@@ -81,7 +79,6 @@ class PrinterCardEditor extends HTMLElement {
   private _hass?: HomeAssistant;
 
   setConfig(config: Config) {
-    log('PrinterCardEditor.setConfig (from HA)', config);
     this._config = config;
     this._render();
   }
@@ -100,7 +97,6 @@ class PrinterCardEditor extends HTMLElement {
   };
 
   private _onChange = (config: Config) => {
-    log('PrinterCardEditor dispatching config-changed', config);
     this._config = config;
     this.dispatchEvent(new CustomEvent('config-changed', {
       detail: { config },

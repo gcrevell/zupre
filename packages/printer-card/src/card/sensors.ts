@@ -1,7 +1,6 @@
 import { HomeAssistant } from 'custom-card-helpers';
 import { HassEntity } from 'home-assistant-js-websocket';
 import { Config, MonitoredCondition, SensorOverride } from '../types';
-import { log } from '../debug';
 import {
   formatDuration, formatTemperature, formatTimeOfDay, temperatureUnitFromMeasurement,
 } from './format';
@@ -12,19 +11,9 @@ export type Stat = {
   value: string;
 };
 
-// Logged once per missing entity id (not every render/hass tick) so this
-// stays readable while narrowing down a base_entity/suffix mismatch.
-const loggedMisses = new Set<string>();
-
-const getEntity = (hass: HomeAssistant | undefined, entityId?: string): HassEntity | undefined => {
-  if (!entityId) return undefined;
-  const entity = hass?.states[entityId];
-  if (!entity && hass && !loggedMisses.has(entityId)) {
-    loggedMisses.add(entityId);
-    log('entity not found in hass.states:', entityId);
-  }
-  return entity;
-};
+const getEntity = (hass: HomeAssistant | undefined, entityId?: string): HassEntity | undefined => (
+  entityId ? hass?.states[entityId] : undefined
+);
 
 // `config.sensors` lets a condition (or arbitrary custom key) point at an
 // entity/attribute outside the `${base_entity}${suffix}` convention below —

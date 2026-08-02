@@ -3,7 +3,6 @@ import { FunctionComponent } from 'preact';
 import { useMemo, useState } from 'preact/hooks';
 import { FormSchema, HaForm } from '@zupre/core';
 import { Config } from '../types';
-import { log } from '../debug';
 import { Tabs } from './Tabs';
 import { MonitoredField } from './MonitoredField';
 import styles from './editor.module.css';
@@ -125,10 +124,7 @@ export const Editor: FunctionComponent<Props> = ({ config, hass, onChange }) => 
     use_24hr: config.use_24hr ?? false,
   }), [config.temperature_unit, config.round_temperature, config.round_time, config.use_24hr]);
 
-  const merge = (patch: Partial<Config>) => {
-    log('Editor field change', patch);
-    onChange({ ...config, ...patch });
-  };
+  const merge = (patch: Partial<Config>) => onChange({ ...config, ...patch });
 
   return (
     <div className={styles.root}>

@@ -6,6 +6,7 @@ import { Header } from './Header';
 import { PrinterGraphic } from './PrinterGraphic';
 import { Stats } from './Stats';
 import { Camera } from './Camera';
+import { Actions } from './Actions';
 import styles from './card.module.css';
 
 export const Card: FunctionComponent = () => {
@@ -38,16 +39,19 @@ export const Card: FunctionComponent = () => {
         onToggleExpanded={() => setExpandedOverride(!expanded)}
       />
       <div className={expanded ? `${styles.content} ${styles.contentOpen}` : styles.content}>
-        <div className={styles.contentInner} style={config.vertical ? { flexDirection: 'column' } : undefined}>
-          <button
-            type="button"
-            className={styles.graphicButton}
-            onClick={() => config.camera_entity && setShowCamera(true)}
-            aria-label={config.camera_entity ? 'Show camera' : 'Printer status'}
-          >
-            <PrinterGraphic progress={percent} printing={printing} scale={config.scale} />
-          </button>
-          <Stats stats={stats} percent={percent} showPercent={!config.vertical} />
+        <div className={styles.contentInner}>
+          <div className={styles.mainRow} style={config.vertical ? { flexDirection: 'column' } : undefined}>
+            <button
+              type="button"
+              className={styles.graphicButton}
+              onClick={() => config.camera_entity && setShowCamera(true)}
+              aria-label={config.camera_entity ? 'Show camera' : 'Printer status'}
+            >
+              <PrinterGraphic progress={percent} printing={printing} scale={config.scale} />
+            </button>
+            <Stats stats={stats} percent={percent} showPercent={!config.vertical} />
+          </div>
+          <Actions baseEntity={config.base_entity} status={status} />
         </div>
       </div>
       {config.camera_entity && (

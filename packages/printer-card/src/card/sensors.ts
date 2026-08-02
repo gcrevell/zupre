@@ -40,6 +40,16 @@ export const resolveStatus = (hass: HomeAssistant | undefined, config: Config): 
   return getEntity(hass, config.base_entity)?.state ?? 'unknown';
 };
 
+// PrusaLink's canonical statuses that represent an in-progress job (as
+// opposed to Idle/Ready/Finished/Stopped/Error, where nothing is running) —
+// used to decide when print-control buttons apply, whether the card should
+// auto-expand, and whether the printer graphic shows the idle icon.
+export const ACTIVE_JOB_STATUSES = ['printing', 'paused', 'attention', 'busy'];
+
+export const isActiveJobStatus = (status: string): boolean => (
+  ACTIVE_JOB_STATUSES.includes(status.toLowerCase())
+);
+
 export const resolvePercent = (hass: HomeAssistant | undefined, config: Config): number => {
   const overrideValue = resolveOverride(hass, config, 'Progress').value
     ?? resolveOverride(hass, config, 'progress').value;

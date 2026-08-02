@@ -10,7 +10,7 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "yarn workspace @zupre/room-card run build",
+    "build": "yarn workspace @zupre/room-card run build && yarn workspace @zupre/printer-card run build",
     "watch": "yarn workspace @zupre/room-card run watch",
     "lint": "yarn workspaces run lint",
     "test": "yarn workspace @zupre/core run test",

@@ -1,5 +1,5 @@
 import { FunctionComponent } from 'preact';
-import { useMemo, useState } from 'preact/hooks';
+import { useState } from 'preact/hooks';
 import { useConfig, useHass } from 'hooks';
 import {
   isActiveJobStatus, resolvePercent, resolveStats, resolveStatus,
@@ -19,6 +19,11 @@ export const Card: FunctionComponent = () => {
   const [expandedOverride, setExpandedOverride] = useState<boolean | undefined>(undefined);
   const [showCamera, setShowCamera] = useState(false);
 
+  // Plain derived consts, not useMemo: `hass` gets a new object reference
+  // on every single `set hass()` call HA makes — i.e. on every state change
+  // anywhere in the system, not just this printer's entities (see this
+  // repo's own architecture notes) — so a memo keyed on [hass, config]
+  // would invalidate on effectively every render anyway.
   const status = config ? resolveStatus(hass, config) : 'unknown';
   // `printing` gates the graphic's nozzle-sweep animation specifically —
   // it shouldn't sweep while Paused/Attention/Busy even though those still
@@ -26,10 +31,7 @@ export const Card: FunctionComponent = () => {
   const printing = status.toLowerCase() === 'printing';
   const active = isActiveJobStatus(status);
   const percent = config ? resolvePercent(hass, config) : 0;
-  const stats = useMemo(
-    () => (config ? resolveStats(hass, config) : []),
-    [hass, config],
-  );
+  const stats = config ? resolveStats(hass, config, status) : [];
 
   if (!config) return null;
 

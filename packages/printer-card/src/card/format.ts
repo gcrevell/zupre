@@ -2,13 +2,19 @@ import { TemperatureUnit } from '../types';
 
 const pad = (n: number) => n.toString().padStart(2, '0');
 
+const SECONDS_PER_MINUTE = 60;
+const SECONDS_PER_HOUR = 60 * SECONDS_PER_MINUTE;
+const SECONDS_PER_DAY = 24 * SECONDS_PER_HOUR;
+
+const clampSeconds = (totalSeconds: number) => Math.max(0, Math.round(totalSeconds));
+
 // Compact, always-on units: "1d 2h 3m 4s" (only non-zero leading units shown).
 export const formatDurationExact = (totalSeconds: number): string => {
-  const seconds = Math.max(0, Math.round(totalSeconds));
-  const d = Math.floor(seconds / 86400);
-  const h = Math.floor((seconds % 86400) / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = seconds % 60;
+  const seconds = clampSeconds(totalSeconds);
+  const d = Math.floor(seconds / SECONDS_PER_DAY);
+  const h = Math.floor((seconds % SECONDS_PER_DAY) / SECONDS_PER_HOUR);
+  const m = Math.floor((seconds % SECONDS_PER_HOUR) / SECONDS_PER_MINUTE);
+  const s = seconds % SECONDS_PER_MINUTE;
 
   const parts: string[] = [];
   if (d > 0) parts.push(`${d}d`);
@@ -18,19 +24,36 @@ export const formatDurationExact = (totalSeconds: number): string => {
   return parts.join(' ') || '0s';
 };
 
-// Coarse, single-unit humanization: "2 hours", "5 minutes".
+const pluralize = (count: number, label: string) => `${count} ${label}${count === 1 ? '' : 's'}`;
+
+// Coarse, single-unit humanization: "2 hours", "5 minutes". Units are tried
+// largest-first, but rounding within a unit can reach that unit's own
+// conversion factor into the next larger one (e.g. 3599s / 60 rounds to
+// "60 minutes", which should read as "1 hour") — when that happens, the
+// promoted count is recomputed against the larger unit instead of displaying
+// the overflowed count in the smaller one.
+const ROUNDED_UNITS: [number, string][] = [
+  [SECONDS_PER_DAY, 'day'],
+  [SECONDS_PER_HOUR, 'hour'],
+  [SECONDS_PER_MINUTE, 'minute'],
+];
+
 export const formatDurationRounded = (totalSeconds: number): string => {
-  const seconds = Math.max(0, Math.round(totalSeconds));
-  const units: [number, string][] = [
-    [86400, 'day'],
-    [3600, 'hour'],
-    [60, 'minute'],
-  ];
-  const unit = units.find(([size]) => seconds >= size);
-  if (!unit) return `${seconds} sec`;
-  const [size, label] = unit;
-  const count = Math.round(seconds / size);
-  return `${count} ${label}${count === 1 ? '' : 's'}`;
+  const seconds = clampSeconds(totalSeconds);
+
+  for (let i = 0; i < ROUNDED_UNITS.length; i += 1) {
+    const [size, label] = ROUNDED_UNITS[i];
+    if (seconds < size) continue;
+
+    const count = Math.round(seconds / size);
+    const largerUnit = ROUNDED_UNITS[i - 1];
+    if (largerUnit && count * size >= largerUnit[0]) {
+      return pluralize(Math.round(seconds / largerUnit[0]), largerUnit[1]);
+    }
+    return pluralize(count, label);
+  }
+
+  return `${seconds} sec`;
 };
 
 export const formatDuration = (totalSeconds: number, round?: boolean) => (

@@ -40,22 +40,83 @@ export const resolveStatus = (hass: HomeAssistant | undefined, config: Config): 
   return getEntity(hass, config.base_entity)?.state ?? 'unknown';
 };
 
-// PrusaLink's canonical statuses that represent an in-progress job (as
-// opposed to Idle/Ready/Finished/Stopped/Error, where nothing is running) —
-// used to decide when print-control buttons apply, whether the card should
-// auto-expand, and whether the printer graphic shows the idle icon.
-export const ACTIVE_JOB_STATUSES = ['printing', 'paused', 'attention', 'busy'];
+export type StatusAction = { suffix: string; label: string; icon: string };
 
-export const isActiveJobStatus = (status: string): boolean => (
-  ACTIVE_JOB_STATUSES.includes(status.toLowerCase())
+type StatusMeta = {
+  color: string;
+  // Whether this status represents an in-progress job — used to decide
+  // whether print-control buttons apply, whether the card should
+  // auto-expand, whether the printer graphic shows the idle icon, and
+  // whether the power button is hidden (cutting power mid-job loses the
+  // print and can damage the printer, whether or not it's actively moving
+  // right now).
+  active: boolean;
+  actions: StatusAction[];
+};
+
+// Single source of truth for PrusaLink's full canonical status vocabulary —
+// Header (color) and Actions (buttons) both derive from this instead of
+// keeping their own independent status->behavior maps, so a status that's
+// missing or mistyped here fails the same way everywhere rather than
+// silently falling back to different defaults in different components.
+const STATUS_META: Record<string, StatusMeta> = {
+  idle: { color: '#00bcd4', active: false, actions: [] },
+  ready: { color: '#00bcd4', active: false, actions: [] },
+  busy: {
+    color: '#ffc107',
+    active: true,
+    actions: [{ suffix: 'cancel_job', label: 'Cancel', icon: 'mdi:stop' }],
+  },
+  printing: {
+    color: '#4caf50',
+    active: true,
+    actions: [
+      { suffix: 'pause_job', label: 'Pause', icon: 'mdi:pause' },
+      { suffix: 'cancel_job', label: 'Cancel', icon: 'mdi:stop' },
+    ],
+  },
+  // A plain user-initiated pause offers Resume...
+  paused: {
+    color: '#ffc107',
+    active: true,
+    actions: [
+      { suffix: 'resume_job', label: 'Resume', icon: 'mdi:play' },
+      { suffix: 'cancel_job', label: 'Cancel', icon: 'mdi:stop' },
+    ],
+  },
+  // ...while a print blocked on something (filament runout, MMU, etc.)
+  // surfaces as Attention and offers Continue instead.
+  attention: {
+    color: '#ff7043',
+    active: true,
+    actions: [
+      { suffix: 'continue_job', label: 'Continue', icon: 'mdi:play' },
+      { suffix: 'cancel_job', label: 'Cancel', icon: 'mdi:stop' },
+    ],
+  },
+  finished: { color: '#26a69a', active: false, actions: [] },
+  stopped: { color: '#9e9e9e', active: false, actions: [] },
+  error: { color: '#f44336', active: false, actions: [] },
+  // Not a real PrusaLink status — our own fallback when the base entity is
+  // missing (see resolveStatus above).
+  unknown: { color: '#f44336', active: false, actions: [] },
+};
+
+const FALLBACK_STATUS_META: StatusMeta = { color: '#ffc107', active: false, actions: [] };
+
+const statusMeta = (status: string): StatusMeta => (
+  STATUS_META[status.toLowerCase()] ?? FALLBACK_STATUS_META
 );
 
-export const resolvePercent = (hass: HomeAssistant | undefined, config: Config): number => {
-  const overrideValue = resolveOverride(hass, config, 'Progress').value
-    ?? resolveOverride(hass, config, 'progress').value;
-  if (overrideValue !== undefined) return Number(overrideValue);
+export const statusColor = (status: string): string => statusMeta(status).color;
 
-  const value = getEntity(hass, `${config.base_entity}_progress`)?.state;
+export const statusActions = (status: string): StatusAction[] => statusMeta(status).actions;
+
+export const isActiveJobStatus = (status: string): boolean => statusMeta(status).active;
+
+export const resolvePercent = (hass: HomeAssistant | undefined, config: Config): number => {
+  const overrideValue = resolveOverride(hass, config, 'Progress').value;
+  const value = overrideValue ?? getEntity(hass, `${config.base_entity}_progress`)?.state;
   const percent = Number(value);
   return Number.isFinite(percent) ? percent : 0;
 };
@@ -70,12 +131,25 @@ const parseTimestamp = (state?: string): number | undefined => {
   return Number.isFinite(parsed) ? parsed : undefined;
 };
 
+// A bare number string ("300", "5400") isn't rejected by Date.parse — it
+// silently resolves to a bogus date (year 300, year 5400, ...) rather than
+// NaN, so parseTimestamp alone can't tell "unparseable" apart from
+// "technically parses to nonsense." A `sensors:` override for Elapsed/
+// Remaining/ETA can legitimately point at either an absolute timestamp
+// entity (matching PrusaLink's own convention) or a plain duration-in-
+// seconds entity (e.g. an OctoPrint-style "time remaining" sensor), so
+// numeric-looking values are treated as a duration directly instead of
+// being handed to Date.parse at all.
+const isPlainNumber = (value: string): boolean => /^-?\d+(\.\d+)?$/.test(value.trim());
+
 // PrusaLink reports absolute ISO timestamps (`_print_start`/`_print_finish`)
 // that we diff against now, rather than a live seconds count.
 const resolveElapsedSeconds = (hass: HomeAssistant | undefined, config: Config): number | undefined => {
   const override = resolveOverride(hass, config, MonitoredCondition.Elapsed);
   if (override.value !== undefined) {
-    const parsed = parseTimestamp(String(override.value));
+    const raw = String(override.value);
+    if (isPlainNumber(raw)) return Number(raw);
+    const parsed = parseTimestamp(raw);
     return parsed !== undefined ? (Date.now() - parsed) / 1000 : undefined;
   }
 
@@ -87,7 +161,9 @@ const resolveRemainingSeconds = (hass: HomeAssistant | undefined, config: Config
   const overrideValue = resolveOverride(hass, config, MonitoredCondition.Remaining).value
     ?? resolveOverride(hass, config, MonitoredCondition.ETA).value;
   if (overrideValue !== undefined) {
-    const parsed = parseTimestamp(String(overrideValue));
+    const raw = String(overrideValue);
+    if (isPlainNumber(raw)) return Number(raw);
+    const parsed = parseTimestamp(raw);
     return parsed !== undefined ? (parsed - Date.now()) / 1000 : undefined;
   }
 
@@ -140,10 +216,11 @@ const resolveStat = (
   hass: HomeAssistant | undefined,
   config: Config,
   condition: MonitoredCondition | string,
+  precomputedStatus?: string,
 ): Stat => {
   switch (condition) {
     case MonitoredCondition.Status:
-      return { key: condition, name: 'Status', value: resolveStatus(hass, config) };
+      return { key: condition, name: 'Status', value: precomputedStatus ?? resolveStatus(hass, config) };
 
     case MonitoredCondition.Elapsed: {
       const seconds = resolveElapsedSeconds(hass, config);
@@ -200,6 +277,13 @@ const resolveStat = (
   }
 };
 
-export const resolveStats = (hass: HomeAssistant | undefined, config: Config): Stat[] => (
-  (config.monitored ?? []).map((condition) => resolveStat(hass, config, condition))
+// `precomputedStatus` lets a caller that's already resolved status for its
+// own purposes (e.g. the header) pass it through instead of resolving it
+// again here — only used for the Status condition.
+export const resolveStats = (
+  hass: HomeAssistant | undefined,
+  config: Config,
+  precomputedStatus?: string,
+): Stat[] => (
+  (config.monitored ?? []).map((condition) => resolveStat(hass, config, condition, precomputedStatus))
 );

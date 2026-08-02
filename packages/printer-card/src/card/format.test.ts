@@ -44,6 +44,17 @@ describe('formatDurationRounded', () => {
     expect(formatDurationRounded(3600)).toBe('1 hour');
   });
 
+  // Regression: rounding within the selected unit used to overflow into the
+  // next unit's own threshold (e.g. 3599/60 rounds to 60, which was
+  // displayed as "60 minutes" instead of promoting to "1 hour").
+  it('promotes to the next unit instead of overflowing (minute -> hour)', () => {
+    expect(formatDurationRounded(3599)).toBe('1 hour');
+  });
+
+  it('promotes to the next unit instead of overflowing (hour -> day)', () => {
+    expect(formatDurationRounded(86399)).toBe('1 day');
+  });
+
   it('rounds to the nearest day', () => {
     expect(formatDurationRounded(90000)).toBe('1 day');
   });

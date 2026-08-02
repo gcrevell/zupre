@@ -5,7 +5,7 @@ import { Actions } from './Actions';
 
 const BASE_ENTITY = 'sensor.second_bedroom_prusa_3d_printer';
 
-const renderActions = (status: string, callService = jest.fn()) => {
+const renderActions = (status: string, callService = jest.fn(), baseEntity = BASE_ENTITY) => {
   const container = document.createElement('div');
   const store = createStore();
   store.setState({
@@ -14,7 +14,7 @@ const renderActions = (status: string, callService = jest.fn()) => {
 
   render(
     <StoreContext.Provider value={store}>
-      <Actions baseEntity={BASE_ENTITY} status={status} />
+      <Actions baseEntity={baseEntity} status={status} />
     </StoreContext.Provider>,
     container,
   );
@@ -58,5 +58,14 @@ describe('Actions', () => {
     expect(callService).toHaveBeenCalledWith('button', 'press', {
       entity_id: 'button.second_bedroom_prusa_3d_printer_pause_job',
     });
+  });
+
+  // Regression: a base_entity with no domain prefix (e.g. a misconfigured
+  // "second_bedroom_printer" instead of "sensor.second_bedroom_printer")
+  // used to have its unmodified string spliced straight into the button
+  // entity id rather than being rejected as a config error.
+  it('renders nothing when base_entity has no domain prefix', () => {
+    const container = renderActions('Printing', jest.fn(), 'second_bedroom_prusa_3d_printer');
+    expect(container.childElementCount).toBe(0);
   });
 });

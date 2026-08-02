@@ -1,7 +1,7 @@
 import { FunctionComponent } from 'preact';
 import { useEntity, useHass } from 'hooks';
 import { Config } from '../types';
-import { isActiveJobStatus } from './sensors';
+import { isActiveJobStatus, statusColor } from './sensors';
 import styles from './card.module.css';
 
 type Props = {
@@ -9,22 +9,6 @@ type Props = {
   status: string;
   expanded: boolean;
   onToggleExpanded: () => void;
-};
-
-// PrusaLink's full canonical status vocabulary — every value the base
-// entity is documented to report, so nothing falls through to the generic
-// fallback color unless it's a genuinely unrecognized/future status.
-const STATUS_COLORS: Record<string, string> = {
-  idle: '#00bcd4',
-  ready: '#00bcd4',
-  busy: '#ffc107',
-  printing: '#4caf50',
-  paused: '#ffc107',
-  attention: '#ff7043',
-  finished: '#26a69a',
-  stopped: '#9e9e9e',
-  error: '#f44336',
-  unknown: '#f44336',
 };
 
 export const Header: FunctionComponent<Props> = ({
@@ -41,7 +25,7 @@ export const Header: FunctionComponent<Props> = ({
     if (entity) hass?.callService('homeassistant', 'toggle', { entity_id: entity });
   };
 
-  const statusColor = STATUS_COLORS[status.toLowerCase()] ?? '#ffc107';
+  const dotColor = statusColor(status);
   // Hidden rather than disabled during any in-progress job (Printing,
   // Paused, Attention, Busy — not just literal "Printing"): a smart plug cut
   // loses the job (and can damage the printer) whether or not it's actively
@@ -69,7 +53,7 @@ export const Header: FunctionComponent<Props> = ({
         onClick={onToggleExpanded}
         aria-expanded={expanded}
       >
-        <span className={styles.statusDot} style={{ backgroundColor: statusColor }} />
+        <span className={styles.statusDot} style={{ backgroundColor: dotColor }} />
         <span className={styles.headerText}>{config.name || '(no name)'}</span>
       </button>
 

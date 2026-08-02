@@ -47,6 +47,28 @@ describe('resolveStatus', () => {
   });
 });
 
+describe('resolveStats precomputed status', () => {
+  it('uses a precomputed status for the Status stat instead of resolving it again', () => {
+    // Points the entity at a different value than the precomputed status to
+    // prove the precomputed one wins (a caller that already resolved status
+    // for its own purposes, e.g. the header, shouldn't pay for a second
+    // identical lookup here).
+    const hass = fakeHass({ 'sensor.printer': { state: 'Printing' } });
+    const config: Config = { ...baseConfig, monitored: [MonitoredCondition.Status] };
+    expect(resolveStats(hass, config, 'Paused')).toEqual([
+      { key: 'Status', name: 'Status', value: 'Paused' },
+    ]);
+  });
+
+  it('still resolves status itself when no precomputed value is given', () => {
+    const hass = fakeHass({ 'sensor.printer': { state: 'Printing' } });
+    const config: Config = { ...baseConfig, monitored: [MonitoredCondition.Status] };
+    expect(resolveStats(hass, config)).toEqual([
+      { key: 'Status', name: 'Status', value: 'Printing' },
+    ]);
+  });
+});
+
 describe('resolvePercent', () => {
   it('reads `${base_entity}_progress`', () => {
     const hass = fakeHass({ 'sensor.printer_progress': { state: '42' } });
@@ -59,11 +81,25 @@ describe('resolvePercent', () => {
     expect(resolvePercent(hass, baseConfig)).toBe(0);
   });
 
-  it('prefers a Progress override, checking both cases', () => {
+  // Regression: the override path used to return Number(overrideValue)
+  // directly with no finiteness guard, unlike the base-entity fallback path
+  // — a transiently "unknown"/"unavailable" override entity would leak a
+  // literal NaN into the UI (rendered percent text and the graphic's
+  // `height: NaN%` inline style) instead of defaulting to 0.
+  it('defaults to 0 when a Progress override is non-numeric', () => {
+    const hass = fakeHass({ 'sensor.custom_progress': { state: 'unknown' } });
+    const config: Config = {
+      ...baseConfig,
+      sensors: { Progress: { entity: 'sensor.custom_progress' } },
+    };
+    expect(resolvePercent(hass, config)).toBe(0);
+  });
+
+  it('prefers a Progress override', () => {
     const hass = fakeHass({ 'sensor.custom_progress': { state: '77' } });
     const config: Config = {
       ...baseConfig,
-      sensors: { progress: { entity: 'sensor.custom_progress' } },
+      sensors: { Progress: { entity: 'sensor.custom_progress' } },
     };
     expect(resolvePercent(hass, config)).toBe(77);
   });
@@ -133,6 +169,46 @@ describe('resolveStats time fields', () => {
     };
 
     expect(resolveStats(fakeHass({}), config).map((stat) => stat.value)).toEqual(['—', '—']);
+  });
+
+  // Regression: Date.parse on a bare numeric string doesn't return NaN — it
+  // silently resolves to a bogus date (e.g. Date.parse('300') -> year 300),
+  // so a `sensors:` override pointing at a sensor that reports a plain
+  // duration in seconds (rather than a PrusaLink-style ISO timestamp) used
+  // to render a wildly wrong duration instead of being read correctly.
+  it('reads a sensors override as a plain duration when its value is numeric', () => {
+    const hass = fakeHass({
+      'sensor.octoprint_elapsed': { state: '3661' },
+      'sensor.octoprint_remaining': { state: '125' },
+    });
+    const config: Config = {
+      ...baseConfig,
+      monitored: [MonitoredCondition.Elapsed, MonitoredCondition.Remaining],
+      sensors: {
+        Elapsed: { entity: 'sensor.octoprint_elapsed' },
+        Remaining: { entity: 'sensor.octoprint_remaining' },
+      },
+    };
+
+    expect(resolveStats(hass, config)).toEqual([
+      { key: 'Elapsed', name: 'Elapsed', value: '1h 1m' },
+      { key: 'Remaining', name: 'Remaining', value: '2m 5s' },
+    ]);
+  });
+
+  it('still reads a sensors override as an ISO timestamp when its value is not numeric', () => {
+    const hass = fakeHass({
+      'sensor.custom_start': { state: new Date(NOW - 3661_000).toISOString() },
+    });
+    const config: Config = {
+      ...baseConfig,
+      monitored: [MonitoredCondition.Elapsed],
+      sensors: { Elapsed: { entity: 'sensor.custom_start' } },
+    };
+
+    expect(resolveStats(hass, config)).toEqual([
+      { key: 'Elapsed', name: 'Elapsed', value: '1h 1m' },
+    ]);
   });
 });
 

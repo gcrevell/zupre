@@ -10,10 +10,10 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "yarn workspace @zupre/room-card run build && yarn workspace @zupre/printer-card run build",
-    "watch": "yarn workspace @zupre/room-card run watch & yarn workspace @zupre/printer-card run watch & wait",
+    "build": "yarn workspace @zupre/room-card run build && yarn workspace @zupre/printer-card run build && yarn workspace @zupre/forecast-card run build",
+    "watch": "yarn workspace @zupre/room-card run watch & yarn workspace @zupre/printer-card run watch & yarn workspace @zupre/forecast-card run watch & wait",
     "lint": "yarn workspaces run lint",
-    "test": "yarn workspace @zupre/core run test; s1=$?; yarn workspace @zupre/printer-card run test; s2=$?; exit $((s1 || s2))",
+    "test": "yarn workspace @zupre/core run test; s1=$?; yarn workspace @zupre/printer-card run test; s2=$?; yarn workspace @zupre/forecast-card run test; s3=$?; exit $((s1 || s2 || s3))",
     "prepare": "husky"
   },
   "devDependencies": {

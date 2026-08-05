@@ -1,0 +1,425 @@
+.root {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--ha-card-border-radius, 12px);
+  min-height: 180px;
+  color: var(--primary-text-color);
+  background: var(--card-background-color, #fff);
+  cursor: pointer;
+  outline: none;
+}
+
+/* Gradients are saturated/opaque, so forced light text reads reliably over
+   them regardless of the active HA theme; with the dynamic background
+   disabled, the card falls back to the theme's own text color instead. */
+.withBackground {
+  color: #fff;
+}
+
+.square {
+  aspect-ratio: 1 / 1;
+  height: auto;
+}
+
+.background {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+  background-size: cover;
+  background-position: center;
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  min-height: 180px;
+  gap: 12px;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+/* Header */
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.headerMain {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+
+.headerIcon {
+  flex: none;
+  --mdc-icon-size: 36px;
+}
+
+.headerText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.headerName {
+  font-weight: 700;
+  font-size: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.headerCondition {
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+.headerTemp {
+  flex: none;
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.headerAttributes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.headerAttribute {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.headerAttributeLabel {
+  font-size: 11px;
+  opacity: 0.7;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.headerAttributeValue {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Forecast */
+
+.forecastGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.forecastSection {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.forecastSectionLabel {
+  font-size: 11px;
+  opacity: 0.7;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding-left: 4px;
+}
+
+.forecastRow {
+  display: grid;
+  gap: 8px;
+  align-items: end;
+}
+
+.forecastDay {
+  display: grid;
+  grid-template-rows: auto 28px auto;
+  justify-items: center;
+  text-align: center;
+  gap: 8px;
+}
+
+.dayLabel {
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.forecastDay ha-icon {
+  width: 26px;
+  height: 26px;
+  --mdc-icon-size: 26px;
+}
+
+.temps {
+  display: grid;
+  grid-auto-flow: row;
+  gap: 2px;
+  align-items: center;
+  justify-items: center;
+  font-size: 12px;
+  line-height: 1.05;
+}
+
+.hi {
+  font-weight: 600;
+}
+
+.lo {
+  opacity: 0.85;
+}
+
+/* Particles — ported from Bubble Card's weather_forecast module
+   (https://github.com/Clooos/bubble-card, MIT © 2023 Cloos). */
+
+.particleWrap {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  contain: strict;
+  transform: translateZ(0);
+}
+
+.particleRow {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.particleRowBack {
+  z-index: 1;
+  opacity: 0.85;
+  filter: blur(0.2px);
+}
+
+.particleWrapStars .particleRow {
+  z-index: 0;
+}
+
+.particleRain,
+.particleSnow,
+.particleHail,
+.particleStar {
+  position: absolute;
+  pointer-events: none;
+  will-change: transform;
+  animation-fill-mode: both;
+  --d: 1s;
+  --dl: 0s;
+}
+
+.particleRain {
+  bottom: 100%;
+  width: 15px;
+  height: 120px;
+  animation: bc-wx-drop var(--d) linear infinite;
+  animation-delay: var(--dl);
+  --rain-r: 255;
+  --rain-g: 255;
+  --rain-b: 255;
+  --rain-a: 0.28;
+  --rain-w: 1.2px;
+  --rain-h: 80%;
+}
+
+.particleRain::after {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 0;
+  width: var(--rain-w, 1.2px);
+  height: var(--rain-h, 80%);
+  background: linear-gradient(
+    to bottom,
+    rgba(var(--rain-r), var(--rain-g), var(--rain-b), 0),
+    rgba(var(--rain-r), var(--rain-g), var(--rain-b), var(--rain-a))
+  );
+  animation: bc-wx-stem var(--d) linear infinite;
+  animation-delay: var(--dl);
+}
+
+@keyframes bc-wx-drop {
+  0% {
+    transform: translate3d(0, -120px, 0);
+  }
+  100% {
+    transform: translate3d(0, 110vh, 0);
+  }
+}
+
+@keyframes bc-wx-stem {
+  0%, 90% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.particleSnow {
+  top: -16px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 1) 0 52%,
+    rgba(255, 255, 255, 0.96) 65%,
+    rgba(255, 255, 255, 0) 80%
+  );
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.9),
+    0 1px 2px rgba(0, 0, 0, 0.06);
+  animation: bc-wx-snow var(--d) linear infinite;
+  animation-delay: var(--dl);
+}
+
+@keyframes bc-wx-snow {
+  0% {
+    transform: translate3d(0, -16px, 0);
+  }
+  50% {
+    transform: translate3d(var(--drift, 18px), 50vh, 0);
+  }
+  100% {
+    transform: translate3d(0, 110vh, 0);
+  }
+}
+
+.particleHail {
+  top: -20px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 1);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.85),
+    0 1px 1px rgba(0, 0, 0, 0.08);
+  animation: bc-wx-hail var(--d) linear infinite;
+  animation-delay: var(--dl);
+}
+
+@keyframes bc-wx-hail {
+  0% {
+    transform: translate3d(0, -20px, 0);
+  }
+  100% {
+    transform: translate3d(var(--drift, 4px), 110vh, 0);
+  }
+}
+
+.particleStar {
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+  animation: bc-wx-twinkle var(--d) ease-in-out infinite;
+  animation-delay: var(--dl);
+}
+
+@keyframes bc-wx-twinkle {
+  0%, 100% {
+    opacity: 0.15;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Clouds */
+
+.cloudCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.cssClouds {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.cssCloud {
+  position: absolute;
+  left: -20%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 70%);
+  filter: blur(6px);
+  animation-name: bc-wx-cloud-drift;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.cssCloudNight {
+  background: radial-gradient(ellipse at center, rgba(180, 180, 210, 0.5) 0%, rgba(180, 180, 210, 0) 70%);
+}
+
+@keyframes bc-wx-cloud-drift {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(140vw);
+  }
+}
+
+/* Lightning flash */
+
+.flash {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+  animation: bc-wx-flash 5.2s linear infinite;
+  contain: strict;
+  transform: translateZ(0);
+  z-index: 2;
+}
+
+@keyframes bc-wx-flash {
+  0%, 92%, 100% {
+    opacity: 0;
+  }
+  93% {
+    opacity: 0.25;
+  }
+  94% {
+    opacity: 0;
+  }
+  96% {
+    opacity: 0.45;
+  }
+  97% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .particleRain,
+  .particleSnow,
+  .particleHail,
+  .particleStar,
+  .cssCloud,
+  .flash {
+    animation: none !important;
+  }
+}

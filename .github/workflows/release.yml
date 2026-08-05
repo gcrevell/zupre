@@ -28,6 +28,9 @@ jobs:
       - name: Build printer-card
         run: yarn workspace @zupre/printer-card run build
 
+      - name: Build forecast-card
+        run: yarn workspace @zupre/forecast-card run build
+
       # Rolling "latest" release: each push to main overwrites its assets,
       # giving consumers (e.g. the homeassistant config repo) one stable,
       # permanent download URL per card instead of a version to track.
@@ -40,3 +43,4 @@ jobs:
           files: |
             packages/room-card/dist/room-card.js
             packages/printer-card/dist/printer-card.js
+            packages/forecast-card/dist/forecast-card.js

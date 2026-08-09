@@ -1,5 +1,5 @@
 const path = require('path');
-const createConfig = require('../core/webpack.base');
+const createConfig = require('@zupre/core/webpack.base');
 
 module.exports = createConfig({
   entry: './src/index.tsx',

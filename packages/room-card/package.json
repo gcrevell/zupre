@@ -10,7 +10,7 @@
     "lint": "eslint \"src/**\""
   },
   "dependencies": {
-    "@zupre/core": "*",
+    "@zupre/core": "github:gcrevell/trellis#main",
     "custom-card-helpers": "^2.0.0",
     "preact": "^10.29.2"
   }

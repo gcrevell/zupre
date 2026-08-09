@@ -4,7 +4,6 @@
     "outDir": "./dist/",
     "baseUrl": ".",
     "paths": {
-      "@zupre/core": ["../core/src"],
       "*": ["./src/*"]
     }
   },

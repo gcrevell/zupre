@@ -1,3 +1,11 @@
+# Deprecation warning
+
+> [!CAUTION]
+>
+> This repo (the fork) is **DEPRECATED** and will not be changed going forward,
+> in favor of the new public base repo [trellis](https://github.com/gcrevell/trellis).
+
+## Original README:
 
 # zupre
 
